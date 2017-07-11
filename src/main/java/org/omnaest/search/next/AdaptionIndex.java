@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -236,6 +237,11 @@ public class AdaptionIndex<C, R>
 		{
 			super();
 			this.codeSequence = codeSequence;
+		}
+
+		public List<C> getCodeSequence()
+		{
+			return this.codeSequence;
 		}
 
 		@Override
@@ -633,11 +639,37 @@ public class AdaptionIndex<C, R>
 		Stream<MatchNode<C, R>> getNodes();
 
 		int getOccurrenceNumber();
+
+		boolean isCodeSequenceGroup();
+
+		MatchGroupCodeSequence<C, R> asCodeSequenceGroup();
 	}
 
-	private static class MatchGroupImpl<C, R> implements MatchGroup<C, R>
+	public static interface MatchGroupCodeSequence<C, R>
+	{
+		List<C> getCodeSequence();
+	}
+
+	protected static class MatchGroupImpl<C, R> implements MatchGroup<C, R>
 	{
 		private Group<C, R> group;
+
+		protected static class MatchGroupCodeSequenceImpl<C, R> implements MatchGroupCodeSequence<C, R>
+		{
+			private CodeSequenceGroup<C, R> group;
+
+			public MatchGroupCodeSequenceImpl(CodeSequenceGroup<C, R> group)
+			{
+				super();
+				this.group = group;
+			}
+
+			@Override
+			public List<C> getCodeSequence()
+			{
+				return this.group.getCodeSequence();
+			}
+		}
 
 		public MatchGroupImpl(Group<C, R> group)
 		{
@@ -672,6 +704,18 @@ public class AdaptionIndex<C, R>
 								.size();
 		}
 
+		@Override
+		public boolean isCodeSequenceGroup()
+		{
+			return this.group instanceof CodeSequenceGroup;
+		}
+
+		@Override
+		public MatchGroupCodeSequence<C, R> asCodeSequenceGroup()
+		{
+			return new MatchGroupCodeSequenceImpl<>((CodeSequenceGroup<C, R>) this.group);
+		}
+
 	}
 
 	public static interface MatchNode<C, R>
@@ -679,7 +723,7 @@ public class AdaptionIndex<C, R>
 
 	}
 
-	private static class MatchNodeImpl<C, R> implements MatchNode<C, R>
+	protected static class MatchNodeImpl<C, R> implements MatchNode<C, R>
 	{
 		private Node<C, R> node;
 
@@ -697,9 +741,14 @@ public class AdaptionIndex<C, R>
 
 	}
 
-	public Stream<MatchGroup<C, R>> extractGroups()
+	public Stream<? extends MatchGroup<C, R>> extractGroups()
+	{
+		return this.extractGroups(group -> new MatchGroupImpl<>(group));
+	}
+
+	protected <MG extends MatchGroup<C, R>> Stream<MG> extractGroups(Function<Group<C, R>, MG> mapper)
 	{
 		return this.groupSingletons	.getElements()
-									.map(group -> new MatchGroupImpl<>(group));
+									.map(mapper);
 	}
 }
