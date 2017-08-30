@@ -19,10 +19,13 @@
 package org.omnaest.search.next;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,21 +83,33 @@ public class AdaptionIndex<C, R>
 		public boolean equals(Object obj)
 		{
 			if (this == obj)
+			{
 				return true;
+			}
 			if (obj == null)
+			{
 				return false;
+			}
 			if (this.getClass() != obj.getClass())
+			{
 				return false;
+			}
 			CodeAndPosition<?> other = (CodeAndPosition<?>) obj;
 			if (this.code == null)
 			{
 				if (other.code != null)
+				{
 					return false;
+				}
 			}
 			else if (!this.code.equals(other.code))
+			{
 				return false;
+			}
 			if (this.position != other.position)
+			{
 				return false;
+			}
 			return true;
 		}
 
@@ -162,19 +177,29 @@ public class AdaptionIndex<C, R>
 		public boolean equals(Object obj)
 		{
 			if (this == obj)
+			{
 				return true;
+			}
 			if (obj == null)
+			{
 				return false;
+			}
 			if (this.getClass() != obj.getClass())
+			{
 				return false;
+			}
 			LinkedCodeAndPosition<?> other = (LinkedCodeAndPosition<?>) obj;
 			if (this.codeAndPosition == null)
 			{
 				if (other.codeAndPosition != null)
+				{
 					return false;
+				}
 			}
 			else if (!this.codeAndPosition.equals(other.codeAndPosition))
+			{
 				return false;
+			}
 			return true;
 		}
 
@@ -257,19 +282,29 @@ public class AdaptionIndex<C, R>
 		public boolean equals(Object obj)
 		{
 			if (this == obj)
+			{
 				return true;
+			}
 			if (obj == null)
+			{
 				return false;
+			}
 			if (this.getClass() != obj.getClass())
+			{
 				return false;
+			}
 			CodeSequenceGroup<?, ?> other = (CodeSequenceGroup<?, ?>) obj;
 			if (this.codeSequence == null)
 			{
 				if (other.codeSequence != null)
+				{
 					return false;
+				}
 			}
 			else if (!this.codeSequence.equals(other.codeSequence))
+			{
 				return false;
+			}
 			return true;
 		}
 
@@ -354,21 +389,33 @@ public class AdaptionIndex<C, R>
 		public boolean equals(Object obj)
 		{
 			if (this == obj)
+			{
 				return true;
+			}
 			if (obj == null)
+			{
 				return false;
+			}
 			if (this.getClass() != obj.getClass())
+			{
 				return false;
+			}
 			LinkedCodeAndPositionSequence<?> other = (LinkedCodeAndPositionSequence<?>) obj;
 			if (this.size != other.size)
+			{
 				return false;
+			}
 			if (this.startLinkedCodeAndPosition == null)
 			{
 				if (other.startLinkedCodeAndPosition != null)
+				{
 					return false;
+				}
 			}
 			else if (!this.startLinkedCodeAndPosition.equals(other.startLinkedCodeAndPosition))
+			{
 				return false;
+			}
 			return true;
 		}
 
@@ -428,6 +475,24 @@ public class AdaptionIndex<C, R>
 			return this.references;
 		}
 
+		public Node<C, R> addReferences(Collection<R> references)
+		{
+			if (references != null)
+			{
+				for (R reference : references)
+				{
+					this.addReference(reference);
+				}
+			}
+			return this;
+		}
+
+		public Node<C, R> addReference(R reference)
+		{
+			this.references.add(reference);
+			return this;
+		}
+
 		public LinkedCodeAndPositionSequence<C> getLinkedCodeAndPositionSequence()
 		{
 			return this.linkedCodeAndPositionSequence;
@@ -449,7 +514,7 @@ public class AdaptionIndex<C, R>
 		{
 			return "Node [" + this	.getLinkedCodeAndPositionSequence()
 									.getCodeAndPositionSequence()
-					+ "]";
+					+ "," + this.references + "]";
 		}
 
 		@Override
@@ -465,19 +530,29 @@ public class AdaptionIndex<C, R>
 		public boolean equals(Object obj)
 		{
 			if (this == obj)
+			{
 				return true;
+			}
 			if (obj == null)
+			{
 				return false;
+			}
 			if (this.getClass() != obj.getClass())
+			{
 				return false;
+			}
 			Node<?, ?> other = (Node<?, ?>) obj;
 			if (this.linkedCodeAndPositionSequence == null)
 			{
 				if (other.linkedCodeAndPositionSequence != null)
+				{
 					return false;
+				}
 			}
 			else if (!this.linkedCodeAndPositionSequence.equals(other.linkedCodeAndPositionSequence))
+			{
 				return false;
+			}
 			return true;
 		}
 
@@ -496,7 +571,7 @@ public class AdaptionIndex<C, R>
 		void generateAndLinkToGroup();
 	}
 
-	public void analyze(Stream<C> codeSequence, R reference)
+	public AdaptionIndex<C, R> analyze(Stream<C> codeSequence, R reference)
 	{
 		if (codeSequence != null)
 		{
@@ -510,13 +585,20 @@ public class AdaptionIndex<C, R>
 													.map(codeAndPosition -> new LinkedCodeAndPosition<>(codeAndPosition).setPreviousAndSetThisForItsNext(previous.get()))
 													.peek(linkedCodeAndPosition -> previous.set(linkedCodeAndPosition))
 													.map(linkedCodeAndPosition -> new LinkedCodeAndPositionSequence<>(linkedCodeAndPosition, 1))
-													.map(linkedCodeAndPositionSequence -> this.createOrGetSingletonNode(linkedCodeAndPositionSequence)));
+													.map(linkedCodeAndPositionSequence -> this.createOrGetSingletonNode(linkedCodeAndPositionSequence,
+																														codeSequenceAndReference.getReference())));
 		}
+		return this;
 	}
 
-	private Node<C, R> createOrGetSingletonNode(LinkedCodeAndPositionSequence<C> linkedCodeAndPositionSequence)
+	private Node<C, R> createOrGetSingletonNode(LinkedCodeAndPositionSequence<C> linkedCodeAndPositionSequence, R reference)
 	{
-		return this.nodeSingletons.returnAsSingleton(new Node<>(linkedCodeAndPositionSequence));
+		return this.createOrGetSingletonNode(linkedCodeAndPositionSequence, Arrays.asList(reference));
+	}
+
+	private Node<C, R> createOrGetSingletonNode(LinkedCodeAndPositionSequence<C> linkedCodeAndPositionSequence, Collection<R> references)
+	{
+		return this.nodeSingletons.returnAsSingleton(new Node<C, R>(linkedCodeAndPositionSequence).addReferences(references));
 	}
 
 	protected void analyze(Stream<Node<C, R>> nodes)
@@ -580,12 +662,13 @@ public class AdaptionIndex<C, R>
 
 					if (leftSideExpansion != null)
 					{
-						Node<C, R> leftSideNode = AdaptionIndex.this.createOrGetSingletonNode(leftSideExpansion);
+						Node<C, R> leftSideNode = AdaptionIndex.this.createOrGetSingletonNode(leftSideExpansion, node.getReferences());
 						AdaptionIndex.this.analyze(leftSideNode);
 					}
 					if (rightSideExpansion != null)
 					{
-						Node<C, R> rightSideNode = rightSideExpansion != null ? AdaptionIndex.this.createOrGetSingletonNode(rightSideExpansion) : null;
+						Node<C, R> rightSideNode = rightSideExpansion != null
+								? AdaptionIndex.this.createOrGetSingletonNode(rightSideExpansion, node.getReferences()) : null;
 						AdaptionIndex.this.analyze(rightSideNode);
 					}
 
@@ -721,6 +804,8 @@ public class AdaptionIndex<C, R>
 	public static interface MatchNode<C, R>
 	{
 
+		Node<C, R> getNode();
+
 	}
 
 	protected static class MatchNodeImpl<C, R> implements MatchNode<C, R>
@@ -731,6 +816,12 @@ public class AdaptionIndex<C, R>
 		{
 			super();
 			this.node = node;
+		}
+
+		@Override
+		public Node<C, R> getNode()
+		{
+			return this.node;
 		}
 
 		@Override
@@ -751,4 +842,78 @@ public class AdaptionIndex<C, R>
 		return this.groupSingletons	.getElements()
 									.map(mapper);
 	}
+
+	public static class LeftAndRightReferences<C, R>
+	{
+		public Set<List<CodeAndPosition<C>>>	left;
+		public Set<List<CodeAndPosition<C>>>	right;
+
+		public LeftAndRightReferences(Collection<List<CodeAndPosition<C>>> left, Collection<List<CodeAndPosition<C>>> right)
+		{
+			super();
+			this.left = left.stream()
+							.collect(Collectors.toSet());
+			this.right = right	.stream()
+								.collect(Collectors.toSet());
+		}
+
+		public Set<List<CodeAndPosition<C>>> getLeft()
+		{
+			return this.left;
+		}
+
+		public Set<List<CodeAndPosition<C>>> getRight()
+		{
+			return this.right;
+		}
+
+		@Override
+		public String toString()
+		{
+			return "LeftAndRightReferences [left=" + this.left + ", right=" + this.right + "]";
+		}
+
+	}
+
+	public List<LeftAndRightReferences<C, R>> join(AdaptionIndex<C, R> adaptionIndex)
+	{
+		Function<MatchGroup<C, R>, String> function = group -> group.asCodeSequenceGroup()
+																	.getCodeSequence()
+																	.stream()
+																	.map(code -> code.toString())
+																	.collect(Collectors.joining());
+		Map<String, ? extends MatchGroup<C, R>> collectLeft = this	.extractGroups()
+																	.filter(group -> group.getOccurrenceNumber() == 1)
+																	.collect(Collectors.toMap(function, group -> group));
+		Map<String, ? extends MatchGroup<C, R>> collectRight = adaptionIndex.extractGroups()
+																			.filter(group -> group.getOccurrenceNumber() == 1)
+																			.collect(Collectors.toMap(function, group -> group));
+
+		collectLeft	.keySet()
+					.retainAll(collectRight.keySet());
+
+		Function<String, LeftAndRightReferences<C, R>> mapper = key ->
+		{
+			Collection<List<CodeAndPosition<C>>> left = collectLeft	.get(key)
+																	.getNodes()
+																	.map(node -> node	.getNode()
+																						.getLinkedCodeAndPositionSequence()
+																						.getCodeAndPositionSequence())
+																	.collect(Collectors.toList());
+			Collection<List<CodeAndPosition<C>>> right = collectRight	.get(key)
+																		.getNodes()
+																		.map(node -> node	.getNode()
+																							.getLinkedCodeAndPositionSequence()
+																							.getCodeAndPositionSequence())
+																		.collect(Collectors.toList());
+			return new LeftAndRightReferences<>(left, right);
+		};
+		List<LeftAndRightReferences<C, R>> retlist = collectLeft.keySet()
+																.stream()
+																.map(mapper)
+																.collect(Collectors.toList());
+
+		return retlist;
+	}
+
 }
